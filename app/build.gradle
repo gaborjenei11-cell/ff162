@@ -1,0 +1,28 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'audio.gsa.fieldforce'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'audio.gsa.fieldforce'
+        minSdk 29
+        targetSdk 35
+        versionCode 160
+        versionName '1.6.0'
+    }
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
+    ndkVersion '27.0.12077973'
+    buildTypes {
+        release { minifyEnabled false }
+        debug { applicationIdSuffix '.debug' }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

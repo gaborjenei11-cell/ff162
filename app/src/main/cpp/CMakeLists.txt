@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(gsa_fieldforce_move LANGUAGES CXX)
+add_library(gsa_move SHARED move_bridge.cpp)
+target_compile_features(gsa_move PRIVATE cxx_std_17)
+target_compile_options(gsa_move PRIVATE -O2 -fexceptions)
