@@ -1,0 +1,58 @@
+name: Build GSA FieldForce APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Install Android platform and tools
+        run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0' 'ndk;27.0.12077973' 'cmake;3.22.1'
+      - name: Verify repository contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Checkout: $GITHUB_WORKSPACE"
+          for f in tests/run_java_tests.sh tests/run_move_tests.sh app/build.gradle app/src/main/AndroidManifest.xml; do
+            if [[ ! -f "$f" ]]; then
+              echo "::error file=$f::Missing file in GitHub checkout. Upload the FULL contents of the ZIP including tests/ and app/."
+              exit 1
+            fi
+          done
+          shopt -s nullglob
+          core=(app/src/main/java/audio/gsa/fieldforce/core/*.java)
+          if (( ${#core[@]} == 0 )); then
+            echo "::error::Missing Java audio core. Upload the FULL app/src/main/java directory from the ZIP."
+            exit 1
+          fi
+          echo "PASS: required tests and ${#core[@]} core Java sources present"
+      - name: Validate portable audio core
+        shell: bash
+        run: bash tests/run_java_tests.sh
+      - name: Validate MOVE 1.0.3d Android port
+        shell: bash
+        run: bash tests/run_move_tests.sh
+      - name: Build debug APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK exists
+        run: test -s app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GSA-FieldForce-Android-debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
